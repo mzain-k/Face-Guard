@@ -1,0 +1,30 @@
+# Virtual environment
+faceguard-env/
+
+# Models — too large for git, auto-downloaded at runtime
+models/
+~/.insightface/
+
+# Sensitive data — never commit these
+data/personnel/
+data/snapshots/
+data/faceguard.db
+config/deployment.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.pytest_cache/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,34 @@
+deployment:
+  name: "Location Name"
+  owner_phone: "+92xxxxxxxxxx"
+
+cameras:
+  - id: "cam_01"
+    label: "Front Door"
+    source: 0
+    fps_sample: 3
+    zone: "entrance"
+
+recognition:
+  model_pack: "buffalo_s"
+  threshold: 0.45
+  vote_frames: 5
+  vote_window_sec: 2
+
+liveness:
+  enabled: true
+  spoof_threshold: 0.6
+
+access:
+  unrecognized_alert_sec: 30
+  bell_trigger_on: "authorized"
+
+relay:
+  enabled: false
+  port: "COM3"
+  baud: 9600
+  ring_duration_sec: 2
+
+retention:
+  snapshot_days: 30
+  log_days: 90
