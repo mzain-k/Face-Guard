@@ -84,7 +84,9 @@ while True:
 
             # Show voter decision as overlay when it fires
             if decision:
-                status = f">> {decision['name']} — {decision['access'].upper()}"
+                name_clean = decision['name'].encode('ascii', 'ignore').decode()
+                access_clean = decision['access'].upper().encode('ascii', 'ignore').decode()
+                status = f">> {name_clean} - {access_clean}"
                 cv2.putText(
                     frame, status,
                     (10, 70),
