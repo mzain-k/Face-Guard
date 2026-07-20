@@ -4,7 +4,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class Track:
     """Represents a single tracked face across frames."""
 
