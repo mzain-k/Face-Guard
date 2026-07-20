@@ -11,6 +11,8 @@ from core.camera import CameraManager
 from core.detector import FaceDetector
 from core.recognizer import FaceRecognizer
 from core.voter import TemporalVoter
+from core.tracker import FaceTracker
+from core.rules import RulesEngine
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,21 +31,20 @@ voter = TemporalVoter(
     vote_window_sec=config["recognition"]["vote_window_sec"]
 )
 
+tracker = FaceTracker()
+rules = RulesEngine(config)
+
 manager = CameraManager(config["cameras"])
 manager.start_all()
 time.sleep(2)
 
-# Color map
 ACCESS_COLORS = {
-    "authorized": (0, 255, 0),    # green
-    "blocked":    (0, 0, 255),    # red
-    "denied":     (0, 165, 255),  # orange — unknown person
+    "authorized": (0, 255, 0),
+    "blocked":    (0, 0, 255),
+    "denied":     (0, 165, 255),
 }
 
-print("\nRecognizer running — press Q to quit\n")
-
-# Simple track ID per frame (no ByteTrack yet — added next session)
-track_counter = 0
+print("\nFaceGuard running — press Q to quit\n")
 
 while True:
     frames = manager.read_all()
@@ -54,54 +55,39 @@ while True:
 
     for cam_id, frame in frames.items():
         faces = detector.detect(frame)
+        tracked = tracker.update(faces)
 
-        for face in faces:
+        for track_id, face in tracked:
             embedding = face.embedding
             if embedding is None:
                 continue
 
-            # Match against personnel DB
             result = recognizer.match(embedding)
+            tid_str = f"{cam_id}_{track_id}"
+            decision = voter.vote(tid_str, result)
 
-            # Vote for temporal consistency
-            track_id = f"{cam_id}_face_{track_counter}"
-            decision = voter.vote(track_id, result)
-
-            # Draw bounding box
+            # Draw live bbox
             x1, y1, x2, y2 = [int(v) for v in face.bbox]
             color = ACCESS_COLORS.get(result["access"], (255, 255, 255))
-
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
-            # Label — show live result even before voter decides
-            label = f"{result['name']} ({result['confidence']:.2f})"
-            cv2.putText(
-                frame, label,
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7, color, 2
-            )
+            label = f"[{track_id}] {result['name']} ({result['confidence']:.2f})"
+            cv2.putText(frame, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, color, 2)
 
-            # Show voter decision as overlay when it fires
+            # Process voter decision through rules engine
             if decision:
-                name_clean = decision['name'].encode('ascii', 'ignore').decode()
-                access_clean = decision['access'].upper().encode('ascii', 'ignore').decode()
-                status = f">> {name_clean} - {access_clean}"
-                cv2.putText(
-                    frame, status,
-                    (10, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.0, color, 2
-                )
-                print(status)
+                action = rules.evaluate(tid_str, decision)
 
-        cv2.putText(
-            frame,
-            f"Faces: {len(faces)}",
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8, (255, 255, 255), 2
-        )
+                status = f">> {decision['name']} - {decision['access'].upper()}"
+                cv2.putText(frame, status, (10, 70),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
+
+                print(f"[{cam_id}] {status} | Bell: {action['ring_bell']} "
+                      f"| Alert: {action['send_alert']} | {action['reason']}")
+
+        cv2.putText(frame, f"Faces: {len(faces)}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         cv2.imshow(f"FaceGuard | {cam_id}", frame)
 
