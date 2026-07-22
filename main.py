@@ -15,6 +15,7 @@ from core.tracker import FaceTracker
 from core.rules import RulesEngine
 from alerts.whatsapp import WhatsAppAlerter
 from alerts.bell import BellController
+from dashboard.backend.db import init_db, log_event
 
 # Suppress OpenVINO DLL warning — falls back to CPU cleanly
 os.environ["ORT_LOGGING_LEVEL"] = "3"
@@ -66,6 +67,7 @@ def main():
         ring_duration_sec=relay_cfg.get("ring_duration_sec", 2)
     )
 
+    init_db()
     manager = CameraManager(config["cameras"])
     manager.start_all()
     time.sleep(2)
@@ -120,6 +122,15 @@ def main():
                             f"[{cam_id}] {status} | "
                             f"Bell: {action['ring_bell']} | "
                             f"Alert: {action['send_alert']}"
+                        )
+
+                        log_event(
+                            camera_id=cam_id,
+                            name=decision["name"],
+                            access=decision["access"],
+                            confidence=decision["confidence"],
+                            action=action["action"],
+                            snapshot_path=None
                         )
 
                         # Trigger bell
