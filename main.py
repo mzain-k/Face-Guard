@@ -17,6 +17,7 @@ from core.recognizer import FaceRecognizer
 from core.voter import TemporalVoter
 from core.tracker import FaceTracker
 from core.rules import RulesEngine
+from core.liveness import LivenessDetector
 from alerts.whatsapp import WhatsAppAlerter
 from alerts.bell import BellController
 from dashboard.backend.db import init_db, log_event
@@ -50,6 +51,12 @@ def main():
 
     recognizer = FaceRecognizer(threshold=config["recognition"]["threshold"])
     recognizer.load()
+
+    liveness = LivenessDetector(
+        spoof_threshold=config["liveness"]["spoof_threshold"]
+    )
+    if config["liveness"]["enabled"]:
+        liveness.load()
 
     voter = TemporalVoter(
         vote_frames=config["recognition"]["vote_frames"],
@@ -100,6 +107,18 @@ def main():
                     embedding = face.embedding
                     if embedding is None:
                         continue
+
+                    # Liveness check — skip spoof attempts entirely
+                    if config["liveness"]["enabled"]:
+                        live, live_score = liveness.is_live(frame, face.bbox)
+                        if not live:
+                            x1, y1, x2, y2 = [int(v) for v in face.bbox]
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                            cv2.putText(frame, f"SPOOF ({live_score:.2f})",
+                                        (x1, y1 - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                            logger.warning(f"[{cam_id}] Spoof detected — skipping recognition.")
+                            continue  # skip recognition entirely for this face
 
                     result = recognizer.match(embedding)
                     tid_str = f"{cam_id}_{track_id}"
