@@ -5,6 +5,10 @@ import sys
 import os
 import time
 
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "dashboard/backend"))
+from db import init_db, log_event
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.camera import CameraManager
@@ -124,6 +128,7 @@ def main():
                             f"Alert: {action['send_alert']}"
                         )
 
+                        # Log to DB
                         log_event(
                             camera_id=cam_id,
                             name=decision["name"],
@@ -137,9 +142,9 @@ def main():
                         if action["ring_bell"]:
                             bell.ring()
 
-                        # Send alert
+                        # Send alert with snapshot
                         if action["send_alert"]:
-                            alerter.send_alert(
+                            snapshot_saved = alerter.send_alert(
                                 reason=action["reason"],
                                 camera_id=cam_id,
                                 frame=frame
