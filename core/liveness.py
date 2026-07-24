@@ -10,7 +10,7 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "../models/MiniFASNetV2.onn
 
 # MiniFASNetV2 constants
 INPUT_SIZE = (80, 80)
-SCALE     = 2.7
+SCALE     = 1.5
 MEAN      = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 STD       = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 

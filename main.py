@@ -39,6 +39,8 @@ def load_config() -> dict:
     with open(CONFIG_PATH) as f:
         return yaml.safe_load(f)
 
+liveness_counter = {}
+LIVENESS_EVERY_N = 5  # check liveness every 5 frames
 
 def main():
     config = load_config()
@@ -108,17 +110,18 @@ def main():
                     if embedding is None:
                         continue
 
-                    # Liveness check — skip spoof attempts entirely
                     if config["liveness"]["enabled"]:
-                        live, live_score = liveness.is_live(frame, face.bbox)
-                        if not live:
-                            x1, y1, x2, y2 = [int(v) for v in face.bbox]
-                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                            cv2.putText(frame, f"SPOOF ({live_score:.2f})",
-                                        (x1, y1 - 10),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                            logger.warning(f"[{cam_id}] Spoof detected — skipping recognition.")
-                            continue  # skip recognition entirely for this face
+                        liveness_counter[track_id] = liveness_counter.get(track_id, 0) + 1
+                        if liveness_counter[track_id] % LIVENESS_EVERY_N == 0:
+                            live, live_score = liveness.is_live(frame, face.bbox)
+                            if not live:
+                                x1, y1, x2, y2 = [int(v) for v in face.bbox]
+                                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                                cv2.putText(frame, f"SPOOF ({live_score:.2f})",
+                                            (x1, y1 - 10),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                                logger.warning(f"[{cam_id}] Spoof detected.")
+                                continue
 
                     result = recognizer.match(embedding)
                     tid_str = f"{cam_id}_{track_id}"

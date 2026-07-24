@@ -30,7 +30,7 @@ class FaceDetector:
             name=self.model_pack,
             providers=["OpenVINOExecutionProvider", "CPUExecutionProvider"]
         )
-        self.app.prepare(ctx_id=0, det_size=self.det_size)
+        self.app.prepare(ctx_id=0, det_size=(160, 160))
         logger.info("Model loaded and ready.")
 
     def detect(self, frame: np.ndarray) -> list:
