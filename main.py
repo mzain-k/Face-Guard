@@ -41,7 +41,7 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 liveness_counter = {}
-LIVENESS_EVERY_N = 5  # check liveness every 5 frames
+LIVENESS_EVERY_N = 10  # check liveness every 5 frames
 
 def main():
     config = load_config()
@@ -173,11 +173,33 @@ def main():
 
                         # Send alert with snapshot
                         if action["send_alert"]:
-                            snapshot_saved = alerter.send_alert(
+                            snapshot_path = None
+                            # Save snapshot
+                            from datetime import datetime
+                            import cv2 as cv
+                            snapshot_name = f"{cam_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                            snapshot_path = os.path.join(
+                                os.path.dirname(__file__),
+                                f"data/snapshots/{snapshot_name}"
+                            )
+                            os.makedirs(os.path.dirname(snapshot_path), exist_ok=True)
+                            cv.imwrite(snapshot_path, frame)
+
+                            alerter.send_alert(
                                 reason=action["reason"],
                                 camera_id=cam_id,
                                 frame=frame
                             )
+
+                        # Update log_event to include snapshot
+                        log_event(
+                            camera_id=cam_id,
+                            name=decision["name"],
+                            access=decision["access"],
+                            confidence=decision["confidence"],
+                            action=action["action"],
+                            snapshot_path=snapshot_path if action["send_alert"] else None
+                        )
 
                 cv2.putText(frame, f"Faces: {len(faces)}", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
