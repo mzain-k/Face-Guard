@@ -18,6 +18,7 @@ from core.voter import TemporalVoter
 from core.tracker import FaceTracker
 from core.rules import RulesEngine
 from core.liveness import LivenessDetector
+from core.retention import run_retention
 from alerts.whatsapp import WhatsAppAlerter
 from alerts.bell import BellController
 from dashboard.backend.db import init_db, log_event
@@ -81,6 +82,12 @@ def main():
     )
 
     init_db()
+
+    run_retention(
+        snapshot_days=config["retention"]["snapshot_days"],
+        log_days=config["retention"]["log_days"]
+    )
+
     manager = CameraManager(config["cameras"])
     manager.start_all()
     time.sleep(2)
