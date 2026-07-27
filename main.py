@@ -8,6 +8,7 @@ import time
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "dashboard/backend"))
 from db import init_db, log_event
+# This is not error it is just a warning that python gives
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
