@@ -23,7 +23,15 @@ export default function Events() {
 
   return (
     <>
-      <p className="page-title">Event Log</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+          <p className="page-title" style={{ margin: 0 }}>Event Log</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ color: "#555", fontSize: "12px" }}>Auto-refreshes every 5s</span>
+              <button className="btn" style={{ background: "#1e2130", color: "#888" }} onClick={load}>
+                  Refresh
+              </button>
+          </div>
+      </div>
       {events.length === 0 && (
         <p className="empty">No events yet — run main.py to start detecting.</p>
       )}

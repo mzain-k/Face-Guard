@@ -40,6 +40,14 @@ export default function Status() {
           <h3 style={{ fontSize: "16px", paddingTop: "8px" }}>{status.timestamp}</h3>
           <p>Last Updated</p>
         </div>
+        <div className="stat">
+            <h3>{status.today_events ?? 0}</h3>
+            <p>Events Today</p>
+        </div>
+        <div className="stat">
+            <h3>{status.personnel_count > 0 ? "ARMED" : "UNARMED"}</h3>
+            <p>Security State</p>
+        </div>
       </div>
       <div className="card">
         <p style={{ color: "#888", fontSize: "13px" }}>Deployment</p>

@@ -121,8 +121,19 @@ def get_snapshot(filename: str):
 
 @app.get("/status")
 def status():
+    db = SessionLocal()
+    try:
+        total_events = db.query(Event).count()
+        today_events = db.query(Event).filter(
+            Event.timestamp >= datetime.now().replace(hour=0, minute=0, second=0)
+        ).count()
+    finally:
+        db.close()
+
     return {
         "deployment": config["deployment"]["name"],
         "personnel_count": len(get_personnel()),
+        "total_events": total_events,
+        "today_events": today_events,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
