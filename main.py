@@ -167,6 +167,16 @@ def main():
                             f"Alert: {action['send_alert']}"
                         )
 
+                        # Save snapshot for every decision
+                        snapshot_path = None
+                        try:
+                            os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
+                            snapshot_name = f"{cam_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                            snapshot_path = os.path.join(SNAPSHOTS_DIR, snapshot_name)
+                            cv2.imwrite(snapshot_path, frame)
+                        except Exception as e:
+                            logger.error(f"Snapshot save failed: {e}")
+
                         # Log to DB
                         log_event(
                             camera_id=cam_id,
@@ -174,42 +184,20 @@ def main():
                             access=decision["access"],
                             confidence=decision["confidence"],
                             action=action["action"],
-                            snapshot_path=None
+                            snapshot_path=snapshot_path
                         )
 
                         # Trigger bell
                         if action["ring_bell"]:
                             bell.ring()
 
-                        # Send alert with snapshot
+                        # Send WhatsApp alert
                         if action["send_alert"]:
-                            snapshot_path = None
-                            # Save snapshot
-                            from datetime import datetime
-                            import cv2 as cv
-                            snapshot_name = f"{cam_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                            snapshot_path = os.path.join(
-                                os.path.dirname(__file__),
-                                f"data/snapshots/{snapshot_name}"
-                            )
-                            os.makedirs(os.path.dirname(snapshot_path), exist_ok=True)
-                            cv.imwrite(snapshot_path, frame)
-
                             alerter.send_alert(
                                 reason=action["reason"],
                                 camera_id=cam_id,
                                 frame=frame
                             )
-
-                        # Update log_event to include snapshot
-                        log_event(
-                            camera_id=cam_id,
-                            name=decision["name"],
-                            access=decision["access"],
-                            confidence=decision["confidence"],
-                            action=action["action"],
-                            snapshot_path=snapshot_path if action["send_alert"] else None
-                        )
 
                 cv2.putText(frame, f"Faces: {len(faces)}", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)

@@ -38,19 +38,38 @@ export default function Events() {
                 <th>Access</th>
                 <th>Confidence</th>
                 <th>Action</th>
+                <th>Snapshot</th>
               </tr>
             </thead>
             <tbody>
               {events.map(e => (
                 <tr key={e.id}>
-                  <td style={{ color: "#888", fontSize: "12px" }}>{e.timestamp}</td>
-                  <td>{e.camera_id}</td>
-                  <td>{e.name}</td>
-                  <td><span className={`badge ${e.access}`}>{e.access}</span></td>
-                  <td>{(e.confidence * 100).toFixed(1)}%</td>
-                  <td style={{ textTransform: "capitalize" }}>{e.action}</td>
+                    <td style={{ color: "#888", fontSize: "12px" }}>{e.timestamp}</td>
+                    <td>{e.camera_id}</td>
+                    <td>{e.name}</td>
+                    <td><span className={`badge ${e.access}`}>{e.access}</span></td>
+                    <td>{(e.confidence * 100).toFixed(1)}%</td>
+                    <td style={{ textTransform: "capitalize" }}>{e.action}</td>
+                    <td>
+                        {e.snapshot ? (
+                            <img
+                                src={`http://127.0.0.1:8000${e.snapshot}`}
+                                alt="snapshot"
+                                style={{
+                                    width: "80px",
+                                    height: "50px",
+                                    objectFit: "cover",
+                                    borderRadius: "4px",
+                                    cursor: "pointer"
+                                }}
+                                onClick={() => window.open(`http://127.0.0.1:8000${e.snapshot}`)}
+                            />
+                        ) : (
+                            <span style={{ color: "#555", fontSize: "12px" }}>—</span>
+                        )}
+                    </td>
                 </tr>
-              ))}
+            ))}
             </tbody>
           </table>
         </div>
