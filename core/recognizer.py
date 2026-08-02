@@ -92,3 +92,8 @@ class FaceRecognizer:
             "confidence": round(confidence, 4),
             "matched": False
         }
+
+    def list_personnel(self) -> list:
+        """Return list of enrolled personnel — used by dashboard."""
+        return self.metadata
+        

@@ -4,13 +4,19 @@ import logging
 import sys
 import os
 import time
-
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "dashboard/backend"))
-from db import init_db, log_event
-# This is not error it is just a warning that python gives
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "dashboard/backend"))
+
+os.environ["ORT_LOGGING_LEVEL"] = "3"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S"
+)
+logger = logging.getLogger("faceguard.main")
 
 from core.camera import CameraManager
 from core.detector import FaceDetector
@@ -22,7 +28,10 @@ from core.liveness import LivenessDetector
 from core.retention import run_retention
 from alerts.whatsapp import WhatsAppAlerter
 from alerts.bell import BellController
-from dashboard.backend.db import init_db, log_event
+from db import init_db, log_event
+
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config/deployment.yaml")
+SNAPSHOTS_DIR = os.path.join(os.path.dirname(__file__), "data/snapshots")
 
 # Suppress OpenVINO DLL warning — falls back to CPU cleanly
 os.environ["ORT_LOGGING_LEVEL"] = "3"

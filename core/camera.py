@@ -17,6 +17,19 @@ class CameraStream:
     are never blocking. Pipeline always gets latest frame.
     """
 
+    def _reconnect(self):
+        """Attempt to reconnect a dropped camera."""
+        logger.info(f"[{self.camera_id}] Attempting reconnect...")
+        if self._cap:
+            self._cap.release()
+        time.sleep(2.0)
+        self._cap = cv2.VideoCapture(self.source)
+        if self._cap.isOpened():
+            logger.info(f"[{self.camera_id}] Reconnected successfully.")
+            return True
+        logger.error(f"[{self.camera_id}] Reconnect failed.")
+        return False
+
     def __init__(self, camera_id: str, source, fps_sample: int = 3):
         self.camera_id = camera_id
         self.source = source
@@ -53,11 +66,6 @@ class CameraStream:
         logger.info(f"[{self.camera_id}] Started — source: {self.source}")
 
     def _capture_loop(self):
-        """
-        Continuously grabs latest frame from camera buffer.
-        grab() flushes stale frames, retrieve() only when
-        pipeline is ready — avoids processing old frames.
-        """
         consecutive_failures = 0
         max_failures = 10
 
@@ -71,16 +79,24 @@ class CameraStream:
                     f"({consecutive_failures}/{max_failures})"
                 )
                 if consecutive_failures >= max_failures:
-                    logger.error(
-                        f"[{self.camera_id}] Too many failures — "
-                        f"camera likely disconnected."
-                    )
-                    self._running = False
-                    break
+                    logger.error(f"[{self.camera_id}] Too many failures — attempting reconnect.")
+                    if self._reconnect():
+                        consecutive_failures = 0
+                    else:
+                        self._running = False
+                        break
                 time.sleep(0.5)
                 continue
 
-            consecutive_failures = 0  # reset on success
+            consecutive_failures = 0
+
+            now = time.time()
+            if now - self._last_read_time >= self.interval:
+                ret, frame = self._cap.retrieve()
+                if ret:
+                    with self._lock:
+                        self._frame = frame
+                    self._last_read_time = now
 
             now = time.time()
             if now - self._last_read_time >= self.interval:
